@@ -13,6 +13,7 @@ double target_height = 0;
 double squishfactor = 1.0;
 bool inverted = false;
 double pixelRatio = 2.6666666666;
+bool debut = false;
 
 // Declare functions
 std::string convertImage();
@@ -59,6 +60,7 @@ int main(int argc, char const *argv[]) {
 		("s,squishfactor", "Adjust this if your image is squished or stretched vertically. Larger value -> more squished.", cxxopts::value<double>()->default_value("1.0"))
 		("n,invert", "Inverts the colors of the ascii art, from white on black to black on white")
 		("h,help", "Show this help page");
+		
 
 	try {
 		auto result{options.parse(argc, argv)};
@@ -121,7 +123,7 @@ std::string convertImage() {
 
 		// Blur it to denoise it
 		input.gaussianBlur(0,1.0);
-		input.write("step1blurred.png");
+		//input.write("step1blurred.png");
 
 		// Calculate target size keeping aspect ratio in mind
 		if (target_width != 0) {
@@ -136,13 +138,13 @@ std::string convertImage() {
 		}
 
 		input.resize(Geometry(std::to_string(std::lround(target_width)) + "x" + std::to_string(std::lround(target_height)) + "!"));
-		input.write("step2resized.png");
+		//input.write("step2resized.png");
 		
 		width = input.columns();
 		height = input.rows();
 
 		input.type(GrayscaleType);
-		input.write("step3grayscale.png");
+		//input.write("step3grayscale.png");
 
 		// Create view of the pixel cache
 		Pixels view(input);
