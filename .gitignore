@@ -1,0 +1,38 @@
+# --- Build directories ---
+build/
+release/
+out/
+
+# --- Compiled object files ---
+*.o
+*.obj
+*.lo
+*.la
+*.al
+*.libs
+*.so
+*.so.*
+*.a
+*.dll
+*.dylib
+*.exe
+*.out
+
+# --- CMake generated files ---
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+install_manifest.txt
+
+# --- VS Code ---
+.vscode/
+*.code-workspace
+
+
+# --- ImageMagick or app output ---
+Images-OUT/
+out/*.png
+out/*.jpg
+out/*.jpeg
