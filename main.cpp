@@ -96,6 +96,8 @@ int main(int argc, char const *argv[]) {
 	}
 	out << art;
 	out.close();
+
+	std::cout << art << std::endl;
 	return 0;
 }
 
