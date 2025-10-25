@@ -55,11 +55,25 @@ target_include_directories(${PROJECT_NAME} PRIVATE
   ${CMAKE_SOURCE_DIR}/external/include
 )
 
-find_library(IM6_LIB
-  NAMES Magick++-6.Q16HDRI Magick++-6.Q16 Magick++
-  PATHS ${IM6_LIB_DIR}
-  REQUIRED
-)
+# Only search for the library if it actually exists (after install)
+if(EXISTS "${IM6_LIB_DIR}")
+  find_library(IM6_LIB
+    NAMES
+      Magick++-6.Q16HDRI
+      Magick++-6.Q16
+      Magick++-6.Q8HDRI
+      Magick++-6.Q8
+      Magick++-6.Q32HDRI
+      Magick++-6.Q32
+      Magick++
+    PATHS ${IM6_LIB_DIR}
+    NO_DEFAULT_PATH
+    REQUIRED
+  )
+  target_link_libraries(${PROJECT_NAME} PRIVATE ${IM6_LIB})
+else()
+  message(STATUS "ImageMagick6 not yet built — skipping find_library until after make.")
+endif()
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ${IM6_LIB})
 
