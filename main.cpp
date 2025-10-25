@@ -127,6 +127,18 @@ std::string convertImage() {
 
 		// Calculate target size keeping aspect ratio in mind
 		if (target_width != 0) {
+			if (target_height != 0) {
+				// both width and height given → fit inside the given box, preserving aspect ratio
+				double aspect = static_cast<double>(width) / height;
+				double box_aspect = static_cast<double>(target_width) / target_height;
+				if (aspect > box_aspect) {
+					// image is wider than the box -> limit by width
+					target_height = (target_width / aspect) / pixelRatio;
+				} else {
+					// image is taller than the box -> limit by height
+					target_width = (target_height * aspect) * pixelRatio;
+				}
+			}
 			target_height = height * (target_width / width) / pixelRatio;
 		} else {
 			if (target_height == 0) {
