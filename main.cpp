@@ -2,6 +2,8 @@
 #include <cxxopts.hpp>
 #include <Magick++.h>
 #include <fstream>
+#include <algorithm>
+#include <tuple>
 
 using namespace Magick; 
 
@@ -13,10 +15,98 @@ double target_height = 0;
 double squishfactor = 1.0;
 bool inverted = false;
 double pixelRatio = 2.6666666666;
-bool debut = false;
+bool inColor = false;
 
 // Declare functions
 std::string convertImage();
+
+constexpr int clamp(int x, int minv=0, int maxv=255) {
+    return std::min(std::max(x, minv), maxv);
+}
+
+// Slightly desaturate and darken (ChatGPT)
+std::tuple<int,int,int> makeBackgroundColor(int r, int g, int b) {
+    float gray = (r + g + b) / 3.0f;
+    float desaturation = 0.6f; // 0 = fully gray, 1 = full color
+    float darken = 0.25f;      // fraction to darken
+    int nr = clamp(static_cast<int>((gray * (1 - desaturation) + r * desaturation) * darken));
+    int ng = clamp(static_cast<int>((gray * (1 - desaturation) + g * desaturation) * darken));
+    int nb = clamp(static_cast<int>((gray * (1 - desaturation) + b * desaturation) * darken));
+    return {nr, ng, nb};
+}
+
+// Slightly brighten and saturate (ChatGPT)
+std::tuple<int,int,int> makeForegroundColor(int r, int g, int b) {
+    float gray = (r + g + b) / 3.0f;
+    float saturation = 1.2f;  // >1 increases saturation
+    float brighten = 1.2f;    // >1 brightens
+    int nr = clamp(static_cast<int>((gray + (r - gray) * saturation) * brighten));
+    int ng = clamp(static_cast<int>((gray + (g - gray) * saturation) * brighten));
+    int nb = clamp(static_cast<int>((gray + (b - gray) * saturation) * brighten));
+    return {nr, ng, nb};
+}
+
+/**
+ * @brief Extracts a vibrant accent color from the input image by quantizing to 5 colors
+ * 
+ * The image is resized and blurred slightly to remove noise. Then it is quantized to 5 representative colors,
+ * and the color with the highest saturation × brightness score is chosen as the "accent color".
+ * 
+ * @return std::tuple<int,int,int> (r,g,b)
+ */
+std::tuple<int,int,int> extractAccentColor() {
+    try {
+        Image img(in_filepath);
+
+        // Downsize for speed and to smooth out noise
+        img.resize("100x100!");
+        img.gaussianBlur(0, 1.0);
+
+        // Quantize to 5 representative colors
+        img.quantizeColors(5);
+        img.quantize();
+
+        const size_t n = img.colorMapSize();
+        if (n == 0) {
+            throw std::runtime_error("Color map is empty after quantization.");
+        }
+
+        double bestScore = -1.0;
+        int bestR = 128, bestG = 128, bestB = 128;
+
+        for (size_t i = 0; i < n; ++i) {
+            Color c = img.colorMap(i);
+
+            // Convert to 0–255 range
+            double r = c.redQuantum()   * 255.0 / QuantumRange;
+            double g = c.greenQuantum() * 255.0 / QuantumRange;
+            double b = c.blueQuantum()  * 255.0 / QuantumRange;
+
+            // Compute brightness (luminance) and saturation
+            double maxc = std::max({r, g, b});
+            double minc = std::min({r, g, b});
+            double saturation = (maxc == 0.0) ? 0.0 : (maxc - minc) / maxc;
+            double brightness = (r + g + b) / (3.0 * 255.0);
+
+            // Score vibrant colors higher, avoid dark grays
+            double score = saturation * (0.4 + brightness);
+
+            if (score > bestScore) {
+                bestScore = score;
+                bestR = static_cast<int>(r);
+                bestG = static_cast<int>(g);
+                bestB = static_cast<int>(b);
+            }
+        }
+
+        return {bestR, bestG, bestB};
+
+    } catch (const std::exception& e) {
+        std::cerr << "Error extracting accent color: " << e.what() << std::endl;
+        // Default fallback color (light gray)
+        return {180, 180, 180};
+    }
+}
 
 // =============== Set up the LUT =============== //
 constexpr std::array<std::string_view, 256> makeLUT(bool inverted) {
@@ -59,7 +149,8 @@ int main(int argc, char const *argv[]) {
 		("t,height", "Target ASCII art character height. If both height and width are given, width is prioritized", cxxopts::value<int>())
 		("s,squishfactor", "Adjust this if your image is squished or stretched vertically. Larger value -> more squished.", cxxopts::value<double>()->default_value("1.0"))
 		("n,invert", "Inverts the colors of the ascii art, from white on black to black on white")
-		("h,help", "Show this help page");
+		("h,help", "Show this help page")
+		("c,color", "Render the image in terminal color");
 		
 
 	try {
@@ -81,6 +172,9 @@ int main(int argc, char const *argv[]) {
 		if (result.count("invert")) {
 			inverted = true;
 		}
+		if (result.count("color")) {
+			inColor = true;
+		}
 	} catch (const std::exception& e) {
 		std::cerr << "Error parsing arguments: " << e.what() << std::endl;
 		return 1;
@@ -96,8 +190,20 @@ int main(int argc, char const *argv[]) {
 	}
 	out << art;
 	out.close();
+	if (inColor) {
 
-	std::cout << art << std::endl;
+		auto [r, g, b] = extractAccentColor();  // ChatGPT's magical "🎨 automatically find accent". Quantizes image to 5 colors and extracts the most "vivid"
+
+		// Get foreground and background colors
+		auto [br, bg, bb] = makeBackgroundColor(r, g, b);
+	    auto [fr, fg, fb] = makeForegroundColor(r, g, b);
+		// print using accent colors
+		std::cout << "\033[48;2;"<<br<<';'<<bg<<';'<<bb<<"m"<<"\033[38;2;"<<fr<<';'<<fg<<';'<<fb<<"m"<< art << "\033[0m\n";
+		
+	} else {
+		std::cout << art << std::endl;
+	}
+	
 	return 0;
 }
 
@@ -140,8 +246,9 @@ std::string convertImage() {
 					// image is taller than the box -> limit by height
 					target_width = (target_height * aspect) * pixelRatio;
 				}
+			} else {
+				target_height = height * (target_width / width) / pixelRatio;
 			}
-			target_height = height * (target_width / width) / pixelRatio;
 		} else {
 			if (target_height == 0) {
 				target_width = 400;
