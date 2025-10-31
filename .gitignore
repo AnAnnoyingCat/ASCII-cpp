@@ -4,6 +4,3 @@ release/
 
 # --- VSCode ---
 .vscode/
-
-Images-IN/*
-test/
