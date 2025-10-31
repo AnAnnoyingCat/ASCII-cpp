@@ -22,13 +22,13 @@ int main(int argc, char const *argv[]) {
 	options.add_options()
 		("i,input", "Path to the input file (required)", cxxopts::value<std::string>())
 		("o,output", "Saves the ASCII art to a path", cxxopts::value<std::string>())
-		("p,print", "Prints the ASCII art to console after rendering it")
+		("p,print", "Prints the ASCII art to console after rendering")
 		("w,width", "Target ASCII art character width", cxxopts::value<int>())
-		("H,height", "Target ASCII art character height. If both height and width are given, width is prioritized", cxxopts::value<int>())
-		("s,squishfactor", "Adjust this if your image is squished or stretched vertically. Larger value -> more squished.", cxxopts::value<double>())
-		("n,invert", "Inverts the colors of the ascii art, from white on black to black on white")
-		("h,help", "Show this help page")
-		("c,color", "Render the image in terminal color");
+		("H,height", "Target ASCII art character height", cxxopts::value<int>())
+		("s,squishfactor", "Adjust vertical squish/stretch. Larger value -> more squished.", cxxopts::value<double>())
+		("n,invert", "Inverts colors of ASCII art to black on white")
+		("c,color", "Render image in terminal using an automatically calculated accent color")
+		("h,help", "Show this help page");
 
 	try {
 		auto result{options.parse(argc, argv)};

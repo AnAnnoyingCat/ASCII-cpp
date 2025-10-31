@@ -9,8 +9,8 @@
 struct Parameters {
 	std::string in_filepath;
 	std::optional<std::string> out_filepath;
-	double target_width = 200;
-	double target_height = 80;
+	double target_width = 0;
+	double target_height = 0;
 	double squishfactor = 1.0;
 	bool inverted = false;
 	double pixelRatio = 2.6666666666;
