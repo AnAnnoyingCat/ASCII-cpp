@@ -8,7 +8,7 @@ This is a small project to take an image file and render it as ASCII.
 Using CMakeLists.txt you can execute the following commands to run the converter locally:
 
 ```bash
-mkdir release
+mkdir release && cd release
 cmake -DCMAKE_BUILD_TYPE=Release ..
 make -j$(nproc)
 ```
