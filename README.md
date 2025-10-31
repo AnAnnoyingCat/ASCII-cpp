@@ -18,10 +18,11 @@ make -j$(nproc)
 | Flag | Description |
 |------|--------------|
 | `-i`, `--input <arg>` | Path to the input file (**required**) |
-| `-o`, `--output <arg>` | Path to the output `.txt` file (default: `out.txt`) |
+| `-p`, `--print` | Prints the generated image to console |
+| `-o`, `--output` | Saves the generated image to the specified output path |
 | `-w`, `--width <arg>` | Target ASCII art character width |
-| `-H`, `--height <arg>` | Target ASCII art character height. If both height and width are given, width is prioritized |
-| `-s`, `--squishfactor <arg>` | Adjust vertical squish/stretch. Larger value → more squished (default: `1.0`) |
-| `-n`, `--invert` | Inverts colors of ASCII art (white↔black) |
+| `-H`, `--height <arg>` | Target ASCII art character height |
+| `-s`, `--squishfactor <arg>` | Adjust vertical squish/stretch. Larger value -> more squished |
+| `-n`, `--invert` | Inverts colors of ASCII art (white<->black) |
+| `-c`, `--color` | Render image in terminal using an automatically calculated accent color |
 | `-h`, `--help` | Show this help page |
-| `-c`, `--color` | Render image in terminal color |

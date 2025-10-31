@@ -55,13 +55,18 @@ target_include_directories(imagemagick6 INTERFACE ${IM6_INCLUDE_DIR})
 target_link_directories(imagemagick6 INTERFACE ${IM6_LIB_DIR})
 target_link_libraries(imagemagick6 INTERFACE Magick++-6.Q16 MagickCore-6.Q16 MagickWand-6.Q16)
 
+# Gather all code source files automatically
+file(GLOB_RECURSE PROJECT_SOURCES
+    ${CMAKE_SOURCE_DIR}/src/*.cpp
+)
+
 # My executable
-add_executable(${PROJECT_NAME} main.cpp)
+add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
 add_dependencies(${PROJECT_NAME} ImageMagick6)
 
 target_include_directories(${PROJECT_NAME} PRIVATE
   ${IM6_INCLUDE_DIR}
-  ${CMAKE_SOURCE_DIR}/external/include
+  ${CMAKE_SOURCE_DIR}/include
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE imagemagick6)
