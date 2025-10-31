@@ -14,21 +14,26 @@ if(NOT NPROC OR NPROC EQUAL 0)
   set(NPROC 1)
 endif()
 
-# Fetch and build ImageMagick
-message(STATUS "Fetching and building ImageMagick 6.9.12-98 (Magick++)")
+# Fetch and build ImageMagick 6
+message(STATUS "Fetching and building ImageMagick 6.9.13-0 (Magick++)")
 
 include(ExternalProject)
-ExternalProject_Add(
-  ImageMagick6
-  URL https://download.imagemagick.org/archive/releases/ImageMagick-6.9.12-98.tar.xz
+
+set(IMAGEMAGICK6_INSTALL_DIR ${CMAKE_BINARY_DIR}/imagemagick6-install)
+
+ExternalProject_Add(ImageMagick6
+  GIT_REPOSITORY https://github.com/ImageMagick/ImageMagick6.git
+  GIT_TAG 6.9.13-0
   PREFIX ${CMAKE_BINARY_DIR}/ImageMagick6
   CONFIGURE_COMMAND ${CMAKE_COMMAND} -E chdir <SOURCE_DIR> ./configure
+      CC=${CMAKE_C_COMPILER}
+      CXX=${CMAKE_CXX_COMPILER}
       --disable-dependency-tracking
       --disable-docs
       --without-perl
       --enable-shared
       --with-magick-plus-plus
-      --prefix=<INSTALL_DIR>
+      --prefix=${IMAGEMAGICK6_INSTALL_DIR}
   BUILD_COMMAND ${CMAKE_COMMAND} -E chdir <SOURCE_DIR> ${CMAKE_MAKE_PROGRAM} -j${NPROC}
   INSTALL_COMMAND ${CMAKE_COMMAND} -E chdir <SOURCE_DIR> ${CMAKE_MAKE_PROGRAM} install
   UPDATE_DISCONNECTED TRUE
@@ -38,16 +43,20 @@ ExternalProject_Add(
   LOG_INSTALL ON
 )
 
-# Where it will be installed
-ExternalProject_Get_Property(ImageMagick6 install_dir)
 
-# Add Magick++ include/lib dirs after install
-set(IM6_INCLUDE_DIR ${install_dir}/include/ImageMagick-6)
-set(IM6_LIB_DIR ${install_dir}/lib)
+# Where it will be installed
+set(IM6_INCLUDE_DIR ${IMAGEMAGICK6_INSTALL_DIR}/include/ImageMagick-6)
+set(IM6_LIB_DIR ${IMAGEMAGICK6_INSTALL_DIR}/lib)
+
+# Create an interface target for linking
+add_library(imagemagick6 INTERFACE)
+add_dependencies(imagemagick6 ImageMagick6)
+target_include_directories(imagemagick6 INTERFACE ${IM6_INCLUDE_DIR})
+target_link_directories(imagemagick6 INTERFACE ${IM6_LIB_DIR})
+target_link_libraries(imagemagick6 INTERFACE Magick++-6.Q16 MagickCore-6.Q16 MagickWand-6.Q16)
 
 # My executable
 add_executable(${PROJECT_NAME} main.cpp)
-
 add_dependencies(${PROJECT_NAME} ImageMagick6)
 
 target_include_directories(${PROJECT_NAME} PRIVATE
@@ -55,29 +64,13 @@ target_include_directories(${PROJECT_NAME} PRIVATE
   ${CMAKE_SOURCE_DIR}/external/include
 )
 
-# Only search for the library if it actually exists (after install)
-if(EXISTS "${IM6_LIB_DIR}")
-  find_library(IM6_LIB
-    NAMES
-      Magick++-6.Q16HDRI
-      Magick++-6.Q16
-      Magick++-6.Q8HDRI
-      Magick++-6.Q8
-      Magick++-6.Q32HDRI
-      Magick++-6.Q32
-      Magick++
-    PATHS ${IM6_LIB_DIR}
-    NO_DEFAULT_PATH
-    REQUIRED
-  )
-  target_link_libraries(${PROJECT_NAME} PRIVATE ${IM6_LIB})
-else()
-  message(STATUS "ImageMagick6 not yet built — skipping find_library until after make.")
-endif()
+target_link_libraries(${PROJECT_NAME} PRIVATE imagemagick6)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE ${IM6_LIB})
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+  MAGICKCORE_QUANTUM_DEPTH=16
+  MAGICKCORE_HDRI_ENABLE=0
+)
 
 # Print summary
-
 message(STATUS "ImageMagick include dir: ${IM6_INCLUDE_DIR}")
-message(STATUS "ImageMagick lib: ${IM6_LIB}")
+message(STATUS "ImageMagick lib dir: ${IM6_LIB_DIR}")
