@@ -146,7 +146,7 @@ int main(int argc, char const *argv[]) {
 		("i,input", "Path to the input file (required)", cxxopts::value<std::string>())
 		("o,output", "Path to the output .txt file", cxxopts::value<std::string>()->default_value("out.txt"))
 		("w,width", "Target ASCII art character width", cxxopts::value<int>())
-		("t,height", "Target ASCII art character height. If both height and width are given, width is prioritized", cxxopts::value<int>())
+		("H,height", "Target ASCII art character height. If both height and width are given, width is prioritized", cxxopts::value<int>())
 		("s,squishfactor", "Adjust this if your image is squished or stretched vertically. Larger value -> more squished.", cxxopts::value<double>()->default_value("1.0"))
 		("n,invert", "Inverts the colors of the ascii art, from white on black to black on white")
 		("h,help", "Show this help page")
@@ -238,13 +238,13 @@ std::string convertImage() {
 			if (target_height != 0) {
 				// both width and height given → fit inside the given box, preserving aspect ratio
 				double aspect = static_cast<double>(width) / height;
-				double box_aspect = static_cast<double>(target_width) / target_height;
+				double box_aspect = static_cast<double>(target_width) / (target_height * pixelRatio);
 				if (aspect > box_aspect) {
 					// image is wider than the box -> limit by width
-					target_height = (target_width / aspect) / pixelRatio;
+					target_height = height * (target_width / width) / pixelRatio;
 				} else {
 					// image is taller than the box -> limit by height
-					target_width = (target_height * aspect) * pixelRatio;
+					target_width = (width * target_height * pixelRatio) / height;
 				}
 			} else {
 				target_height = height * (target_width / width) / pixelRatio;
