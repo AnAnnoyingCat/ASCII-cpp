@@ -1,3 +1,0 @@
-# Foreground = rias hair red 158, 24, 33
-# Background = dark gray (RGB 32,32,32)
-echo -e "\e[38;2;255;255;255m\e[48;2;158;24;33mThis is custom RGB text!\e[0m"
